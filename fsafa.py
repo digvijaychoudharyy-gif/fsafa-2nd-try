@@ -1,15 +1,13 @@
 import streamlit as st
 import pandas as pd
+import numpy as np
 
-# --------------------------------------------------
-# PAGE CONFIG
-# --------------------------------------------------
-st.set_page_config(page_title="Financial & Forensic Dashboard", layout="wide")
+st.set_page_config(layout="wide", page_title="Financial & Forensic Dashboard")
 
 st.title("📊 Financial & Forensic Analysis Dashboard")
 
 # --------------------------------------------------
-# LOAD EXCEL FILE
+# LOAD FILE
 # --------------------------------------------------
 @st.cache_data
 def load_data():
@@ -18,35 +16,43 @@ def load_data():
 df = load_data()
 
 # --------------------------------------------------
-# FUNCTION TO EXTRACT CLEAN TABLE
+# CLEAN & EXTRACT FUNCTION
 # --------------------------------------------------
-def extract_table(header_row, start_row, end_row):
-    """
-    header_row : row number containing column names
-    start_row  : first data row
-    end_row    : last data row (exclusive)
-    """
-    temp = df.iloc[header_row:end_row].copy()
-    temp.columns = temp.iloc[0]          # set header
-    temp = temp[1:]                      # remove header row
-    temp = temp.loc[:, temp.columns.notna()]  # drop empty columns
+def clean_extract(start_row, end_row):
+    temp = df.iloc[start_row:end_row].copy()
+
+    # Drop fully empty columns
+    temp = temp.dropna(axis=1, how="all")
+
+    # First non-null row = header
+    header_row = temp.iloc[0]
+    temp = temp[1:]
+    temp.columns = header_row
+
+    # Drop fully empty rows
+    temp = temp.dropna(how="all")
+
+    # Reset index
     temp.reset_index(drop=True, inplace=True)
+
     return temp
 
-# --------------------------------------------------
-# SIDEBAR
-# --------------------------------------------------
-st.sidebar.header("Select Company")
-st.sidebar.selectbox("Company", ["Maruti Suzuki"])
 
 # --------------------------------------------------
-# DASHBOARD LAYOUT
+# DASHBOARD
 # --------------------------------------------------
-
-st.subheader("📌 Company Snapshot")
+st.subheader("📌 Company Overview")
 
 col1, col2 = st.columns(2)
 
 with col1:
     st.markdown("### 🏢 Company Snapshot")
-    snapshot =
+    snapshot = clean_extract(2, 9)
+    st.dataframe(snapshot, use_container_width=True)
+
+with col2:
+    st.markdown("### 🔍 DuPont Analysis")
+    dupont = clean_extract(13, 20)
+    st.dataframe(dupont, use_container_width=True)
+
+#
